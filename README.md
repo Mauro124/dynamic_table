@@ -82,17 +82,26 @@ class MyApp extends StatelessWidget {
 The TableColumn class allows you to configure the columns of the table. Here are the available properties:
 
 ```id:``` The unique identifier for the column.
+
 ```label:``` The label to display in the column header.
+
 ```type:``` The type of data in the column (ColumnType.text, ColumnType.number, ColumnType.currency, ColumnType.date, ColumnType.boolean).
+
 ```size:``` The size of the column (ColumnSize.small, ColumnSize.medium, ColumnSize.large).
 
 ### DynamicTableStyle Configuration
 The DynamicTableStyle class allows you to customize the appearance of the table. Here are the available properties:
 
 ```backgroundColor:``` The background color of the table.
+
 ```textColor:``` The text color of the table.
+
 ```headerColor:``` The background color of the header.
+
 ```headerTextColor:``` The text color of the header.
+
 ```selectedColor:``` The background color of selected rows.
+
 ```selectedTextColor:``` The text color of selected rows.
+
 ```dividersColors:``` The color of the dividers between rows.

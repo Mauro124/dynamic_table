@@ -255,7 +255,7 @@ class _DynamicTableState extends State<DynamicTable> {
                 ...[
                   ...widget.columns.map((col) {
                     return Expanded(
-                      flex: columnSize,
+                      flex: columnSize(col),
                       child: InkWell(
                         onTap: () {
                           setState(() {
@@ -311,7 +311,7 @@ class _DynamicTableState extends State<DynamicTable> {
                       ),
                       ...widget.columns.map((col) {
                         return Expanded(
-                          flex: columnSize,
+                          flex: columnSize(col),
                           child: Align(alignment: Alignment.centerLeft, child: _buildCell(row[col.id], col.type)),
                         );
                       }),
@@ -371,17 +371,15 @@ class _DynamicTableState extends State<DynamicTable> {
     }).toList();
   }
 
-  int get columnSize {
-    int size = 0;
-    for (var col in widget.columns) {
-      size +=
-          col.size == ColumnSize.large
-              ? 3
-              : col.size == ColumnSize.medium
-              ? 2
-              : 1;
+  int columnSize(column) {
+    switch (column.size) {
+      case ColumnSize.small:
+        return 1;
+      case ColumnSize.large:
+        return 3;
+      default:
+        return 2;
     }
-    return size;
   }
 
   int get rowActionsSize => (widget.rowActions?.length ?? 0) * 3;

@@ -76,14 +76,26 @@ class DynamicTableStyle {
   });
 }
 
+class DynamicTableSelectedRow {
+  final int index;
+  final Map<String, dynamic> data;
+
+  DynamicTableSelectedRow({required this.index, required this.data});
+}
+
+class DynamicTableController {
+  void Function() clearSelectedRows = () {};
+}
+
 class DynamicTable extends StatefulWidget {
   final List<Map<String, dynamic>> data;
   final List<TableColumn> columns;
   final List<Widget>? actions;
   final List<Widget>? selectedActions;
-  final Function(List<dynamic> selectedIndex)? onSelectedRows;
+  final Function(List<Map<String, dynamic>> selectedIndex)? onSelectedRows;
   final int rowsPerPage;
   final DynamicTableStyle? style;
+  final DynamicTableController? controller;
 
   const DynamicTable({
     super.key,
@@ -94,6 +106,7 @@ class DynamicTable extends StatefulWidget {
     this.onSelectedRows,
     this.rowsPerPage = 20,
     this.style,
+    this.controller,
   });
 
   @override
@@ -101,7 +114,7 @@ class DynamicTable extends StatefulWidget {
 }
 
 class _DynamicTableState extends State<DynamicTable> {
-  ValueNotifier<List<bool>> selectedRows = ValueNotifier([]);
+  ValueNotifier<List<DynamicTableSelectedRow>> selectedRows = ValueNotifier([]);
   int currentPage = 0;
   String? sortedColumn;
   bool isAscending = true;
@@ -114,24 +127,21 @@ class _DynamicTableState extends State<DynamicTable> {
 
   @override
   void initState() {
+    if (widget.controller != null) {
+      widget.controller!.clearSelectedRows = () {
+        setState(() {
+          selectedRows.value = [];
+        });
+      };
+    }
     super.initState();
-    selectedRows.value = List.generate(widget.data.length, (index) => false);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Asegurar que selectedRows tenga el mismo tamaño que data
-
     selectedRows.addListener(() {
       if (widget.onSelectedRows != null) {
-        widget.onSelectedRows!(
-          selectedRows.value
-              .asMap()
-              .entries
-              .where((entry) => entry.value)
-              .map((entry) => entry.key.toString())
-              .toList(),
-        );
+        widget.onSelectedRows!(selectedRows.value.map((row) => row.data).toList());
       }
     });
 
@@ -158,7 +168,7 @@ class _DynamicTableState extends State<DynamicTable> {
     final int startRow = currentPage * widget.rowsPerPage;
     final int endRow = (startRow + widget.rowsPerPage).clamp(0, sortedData.length);
 
-    bool hasSelectedRows = selectedRows.value.any((selected) => selected);
+    bool hasSelectedRows = selectedRows.value.isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
@@ -193,10 +203,19 @@ class _DynamicTableState extends State<DynamicTable> {
       child: Row(
         children: [
           Checkbox(
-            value: selectedRows.value.isNotEmpty && selectedRows.value.every((selected) => selected),
+            value: selectedRows.value.length == widget.data.length,
             onChanged: (value) {
               setState(() {
-                selectedRows.value = List.generate(widget.data.length, (index) => value!);
+                if (value == true) {
+                  selectedRows.value =
+                      widget.data
+                          .asMap()
+                          .entries
+                          .map((e) => DynamicTableSelectedRow(index: e.key, data: e.value))
+                          .toList();
+                } else {
+                  selectedRows.value = [];
+                }
               });
             },
           ),
@@ -237,6 +256,10 @@ class _DynamicTableState extends State<DynamicTable> {
   }
 
   Expanded _body(int endRow, int startRow, List<Map<String, dynamic>> sortedData) {
+    if (sortedData.isEmpty) {
+      return Expanded(child: Center(child: Text('No hay datos para mostrar')));
+    }
+
     return Expanded(
       child: ListView.builder(
         itemCount: endRow - startRow,
@@ -251,10 +274,17 @@ class _DynamicTableState extends State<DynamicTable> {
             child: Row(
               children: [
                 Checkbox(
-                  value: selectedRows.value.elementAtOrNull(rowIndex) ?? false,
+                  value: selectedRows.value.any((element) => element.index == rowIndex),
                   onChanged: (value) {
                     setState(() {
-                      selectedRows.value[rowIndex] = value!;
+                      if (value == true) {
+                        selectedRows.value = [
+                          ...selectedRows.value,
+                          DynamicTableSelectedRow(index: rowIndex, data: row),
+                        ];
+                      } else {
+                        selectedRows.value = selectedRows.value.where((element) => element.index != rowIndex).toList();
+                      }
                     });
                   },
                 ),
@@ -386,14 +416,14 @@ class _DynamicTableState extends State<DynamicTable> {
 class _SelectedRowsHeader extends StatelessWidget {
   const _SelectedRowsHeader({required this.selectedRows, required this.widget});
 
-  final ValueNotifier<List<bool>> selectedRows;
+  final ValueNotifier<List<DynamicTableSelectedRow>> selectedRows;
   final DynamicTable widget;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text('${selectedRows.value.where((selected) => selected).length} seleccionados'),
+        Text('${selectedRows.value.length} seleccionados'),
         SizedBox(width: 8),
         VerticalDivider(indent: 12, endIndent: 12),
         SizedBox(width: 8),
@@ -412,6 +442,8 @@ class _PaginationControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (totalPages == 0 || totalPages == 1) return SizedBox();
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [

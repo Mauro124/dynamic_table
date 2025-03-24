@@ -1,5 +1,5 @@
 import 'package:dynamic_table/table/dynamic_table_date_filter.dart';
-import 'package:flutter/foundation.dart';
+import 'package:dynamic_table/table/table_column.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -10,9 +10,12 @@ import 'package:intl/intl.dart';
 ///[actions] List of widgets to render in the top right corner of the table
 ///[selectedActions] List of widgets to render when at least one row is selected
 ///[rowActions] List of widgets to render at the end of each row
+///[onSelectedRows] Function that receives a list of selected indexes
+///[rowsPerPage] Number of rows to render per page, default is 20
+///[style] DynamicTableStyle object with the style configuration
 ///
 ///[ColumnType] Enum with the types of columns that can be rendered
-/// - types: text, number, currency, date, boolean, default is text
+/// - types: text, number, currency, date, boolean, action, default is text
 ///
 ///[ColumnSize] Enum with the sizes of columns that can be rendered
 /// - sizes: small, medium, large, default is medium
@@ -53,21 +56,6 @@ import 'package:intl/intl.dart';
 ///```dart
 ///
 
-enum ColumnType { text, number, currency, date, boolean }
-
-enum ColumnSize { small, medium, large }
-
-class TableColumn {
-  final String id;
-  final String label;
-  final ColumnType type;
-  ColumnSize? size;
-
-  TableColumn({required this.id, required this.label, this.type = ColumnType.text, this.size = ColumnSize.medium}) {
-    size = type == ColumnType.boolean ? ColumnSize.small : size;
-  }
-}
-
 class DynamicTableStyle {
   final Color? backgroundColor;
   final Color? textColor;
@@ -93,8 +81,7 @@ class DynamicTable extends StatefulWidget {
   final List<TableColumn> columns;
   final List<Widget>? actions;
   final List<Widget>? selectedActions;
-  final Function(List<String> selectedIndex)? onSelectedRows;
-  final List<Widget>? rowActions;
+  final Function(List<dynamic> selectedIndex)? onSelectedRows;
   final int rowsPerPage;
   final DynamicTableStyle? style;
 
@@ -105,7 +92,6 @@ class DynamicTable extends StatefulWidget {
     this.actions,
     this.selectedActions,
     this.onSelectedRows,
-    this.rowActions,
     this.rowsPerPage = 20,
     this.style,
   });
@@ -181,153 +167,10 @@ class _DynamicTableState extends State<DynamicTable> {
           Container(
             height: 72,
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
-            child:
-                hasSelectedRows
-                    ? Row(
-                      children: [
-                        Text('${selectedRows.value.where((selected) => selected).length} seleccionados'),
-                        SizedBox(width: 8),
-                        VerticalDivider(indent: 12, endIndent: 12),
-                        SizedBox(width: 8),
-                        ...widget.selectedActions ?? [],
-                      ],
-                    )
-                    : Row(
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: _SearchBarWidget(
-                                  searchController: searchController,
-                                  onSearch: (query) {
-                                    setState(() {
-                                      searchQuery = query;
-                                      currentPage = 0;
-                                    });
-                                  },
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              if (widget.columns.any((row) => row.type == ColumnType.date)) ...[
-                                VerticalDivider(indent: 12, endIndent: 12),
-                                SizedBox(width: 8),
-                                DynamicTableDateFilter(
-                                  onSearch: (from, to) {
-                                    setState(() {
-                                      dateFrom = from;
-                                      dateTo = to;
-                                      currentPage = 0;
-                                    });
-                                  },
-                                ),
-                                SizedBox(width: 8),
-                              ],
-                            ],
-                          ),
-                        ),
-                        Visibility(
-                          visible: widget.actions != null,
-                          child: Row(
-                            children: [
-                              VerticalDivider(indent: 12, endIndent: 12),
-                              SizedBox(width: 8),
-                              ...widget.actions ?? [],
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+            child: hasSelectedRows ? _SelectedRowsHeader(selectedRows: selectedRows, widget: widget) : _actionsHeader(),
           ),
-          Container(
-            color: widget.style?.headerColor ?? Colors.grey[200],
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-            child: Row(
-              children: [
-                Checkbox(
-                  value: selectedRows.value.isNotEmpty && selectedRows.value.every((selected) => selected),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedRows.value = List.generate(widget.data.length, (index) => value!);
-                    });
-                  },
-                ),
-                ...[
-                  ...widget.columns.map((col) {
-                    return Expanded(
-                      flex: columnSize(col),
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            if (sortedColumn == col.id) {
-                              isAscending = !isAscending;
-                            } else {
-                              sortedColumn = col.id;
-                              isAscending = true;
-                            }
-                          });
-                        },
-                        child: Row(
-                          children: [
-                            Text(
-                              col.label.toUpperCase(),
-                              textAlign: TextAlign.start,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: widget.style?.headerTextColor ?? Colors.black,
-                              ),
-                            ),
-                            if (sortedColumn == col.id) Icon(isAscending ? Icons.arrow_upward : Icons.arrow_downward),
-                          ],
-                        ),
-                      ),
-                    );
-                  }),
-                  if (widget.rowActions != null) Expanded(flex: rowActionsSize, child: SizedBox()),
-                ],
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: endRow - startRow,
-              itemBuilder: (context, index) {
-                final rowIndex = startRow + index;
-                final row = sortedData[rowIndex];
-                return Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                  decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: widget.style?.dividersColors ?? Colors.grey)),
-                  ),
-                  child: Row(
-                    children: [
-                      Checkbox(
-                        value: selectedRows.value.elementAtOrNull(rowIndex) ?? false,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedRows.value[rowIndex] = value!;
-                          });
-                        },
-                      ),
-                      ...widget.columns.map((col) {
-                        return Expanded(
-                          flex: columnSize(col),
-                          child: Align(alignment: Alignment.centerLeft, child: _buildCell(row[col.id], col.type)),
-                        );
-                      }),
-                      Visibility(
-                        visible: widget.rowActions != null,
-                        child: Expanded(
-                          flex: rowActionsSize,
-                          child: Row(children: [...widget.rowActions!.map((action) => action)]),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
+          _header(),
+          _body(endRow, startRow, sortedData),
           SizedBox(height: 8),
           _PaginationControls(
             currentPage: currentPage,
@@ -340,6 +183,140 @@ class _DynamicTableState extends State<DynamicTable> {
           ),
         ],
       ),
+    );
+  }
+
+  Container _header() {
+    return Container(
+      color: widget.style?.headerColor ?? Colors.grey[200],
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+      child: Row(
+        children: [
+          Checkbox(
+            value: selectedRows.value.isNotEmpty && selectedRows.value.every((selected) => selected),
+            onChanged: (value) {
+              setState(() {
+                selectedRows.value = List.generate(widget.data.length, (index) => value!);
+              });
+            },
+          ),
+          ...widget.columns.map((col) {
+            return Expanded(
+              flex: columnSize(col),
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    if (sortedColumn == col.id) {
+                      isAscending = !isAscending;
+                    } else {
+                      sortedColumn = col.id;
+                      isAscending = true;
+                    }
+                  });
+                },
+                child: Row(
+                  children: [
+                    Text(
+                      col.label.toUpperCase(),
+                      textAlign: TextAlign.start,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: widget.style?.headerTextColor ?? Colors.black,
+                      ),
+                    ),
+                    if (sortedColumn == col.id) Icon(isAscending ? Icons.arrow_upward : Icons.arrow_downward),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Expanded _body(int endRow, int startRow, List<Map<String, dynamic>> sortedData) {
+    return Expanded(
+      child: ListView.builder(
+        itemCount: endRow - startRow,
+        itemBuilder: (context, index) {
+          final rowIndex = startRow + index;
+          final row = sortedData[rowIndex];
+          return Container(
+            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: widget.style?.dividersColors ?? Colors.grey)),
+            ),
+            child: Row(
+              children: [
+                Checkbox(
+                  value: selectedRows.value.elementAtOrNull(rowIndex) ?? false,
+                  onChanged: (value) {
+                    setState(() {
+                      selectedRows.value[rowIndex] = value!;
+                    });
+                  },
+                ),
+                ...widget.columns.map((col) {
+                  return Expanded(
+                    flex: columnSize(col),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: col.type == ColumnType.action ? col.childBuilder!(row) : _buildCell(row[col.id], col.type),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Row _actionsHeader() {
+    return Row(
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(
+                child: _SearchBarWidget(
+                  searchController: searchController,
+                  onSearch: (query) {
+                    setState(() {
+                      searchQuery = query;
+                      currentPage = 0;
+                    });
+                  },
+                ),
+              ),
+              SizedBox(width: 8),
+              if (widget.columns.any((row) => row.type == ColumnType.date)) ...[
+                VerticalDivider(indent: 12, endIndent: 12),
+                SizedBox(width: 8),
+                DynamicTableDateFilter(
+                  onSearch: (from, to) {
+                    setState(() {
+                      dateFrom = from;
+                      dateTo = to;
+                      currentPage = 0;
+                    });
+                  },
+                ),
+                SizedBox(width: 8),
+              ],
+            ],
+          ),
+        ),
+        Visibility(
+          visible: widget.actions != null,
+          child: Row(
+            children: [VerticalDivider(indent: 12, endIndent: 12), SizedBox(width: 8), ...widget.actions ?? []],
+          ),
+        ),
+      ],
     );
   }
 
@@ -382,8 +359,6 @@ class _DynamicTableState extends State<DynamicTable> {
     }
   }
 
-  int get rowActionsSize => (widget.rowActions?.length ?? 0) * 3;
-
   Widget _buildCell(dynamic value, ColumnType type) {
     if (value == null) return Text('-');
 
@@ -405,6 +380,26 @@ class _DynamicTableState extends State<DynamicTable> {
       default:
         return Text(value.toString());
     }
+  }
+}
+
+class _SelectedRowsHeader extends StatelessWidget {
+  const _SelectedRowsHeader({required this.selectedRows, required this.widget});
+
+  final ValueNotifier<List<bool>> selectedRows;
+  final DynamicTable widget;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text('${selectedRows.value.where((selected) => selected).length} seleccionados'),
+        SizedBox(width: 8),
+        VerticalDivider(indent: 12, endIndent: 12),
+        SizedBox(width: 8),
+        ...widget.selectedActions ?? [],
+      ],
+    );
   }
 }
 

@@ -96,6 +96,7 @@ class DynamicTable extends StatefulWidget {
   final int rowsPerPage;
   final DynamicTableStyle? style;
   final DynamicTableController? controller;
+  final List<Widget>? leading;
 
   const DynamicTable({
     super.key,
@@ -107,6 +108,8 @@ class DynamicTable extends StatefulWidget {
     this.rowsPerPage = 20,
     this.style,
     this.controller,
+    this.leading,
+    s,
   });
 
   @override
@@ -311,6 +314,7 @@ class _DynamicTableState extends State<DynamicTable> {
         Expanded(
           child: Row(
             children: [
+              if (widget.leading != null) ...widget.leading ?? [],
               Expanded(
                 child: _SearchBarWidget(
                   searchController: searchController,

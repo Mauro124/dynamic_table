@@ -179,7 +179,7 @@ class _DynamicTableState extends State<DynamicTable> {
         children: [
           Container(
             height: 72,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             child: hasSelectedRows ? _SelectedRowsHeader(selectedRows: selectedRows, widget: widget) : _actionsHeader(),
           ),
           _header(),
@@ -314,7 +314,12 @@ class _DynamicTableState extends State<DynamicTable> {
         Expanded(
           child: Row(
             children: [
-              if (widget.leading != null) ...widget.leading ?? [],
+              if (widget.leading != null) ...[
+                ...widget.leading!,
+                const SizedBox(width: 8),
+                VerticalDivider(indent: 12, endIndent: 12),
+                const SizedBox(width: 8),
+              ],
               Expanded(
                 child: _SearchBarWidget(
                   searchController: searchController,

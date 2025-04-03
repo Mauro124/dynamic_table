@@ -65,12 +65,6 @@ class MyApp extends StatelessWidget {
               child: Text('Delete'),
             ),
           ],
-          rowActions: [
-            ElevatedButton(
-              onPressed: () {},
-              child: Text('Edit'),
-            ),
-          ],
         ),
       ),
     );

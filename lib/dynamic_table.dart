@@ -9,7 +9,6 @@ import 'package:intl/intl.dart';
 ///[columns] List of TableColumn objects with the configuration of each column
 ///[actions] List of widgets to render in the top right corner of the table
 ///[selectedActions] List of widgets to render when at least one row is selected
-///[rowActions] List of widgets to render at the end of each row
 ///[onSelectedRows] Function that receives a list of selected indexes
 ///[rowsPerPage] Number of rows to render per page, default is 20
 ///[style] DynamicTableStyle object with the style configuration
@@ -46,11 +45,6 @@ import 'package:intl/intl.dart';
 ///      child: Text('Delete'),
 ///   ),
 /// ],
-///rowActions: [
-/// ElevatedButton(
-///  onPressed: () {},
-/// child: Text('Edit'),
-///),
 ///],
 ///)
 ///```dart
@@ -178,8 +172,8 @@ class _DynamicTableState extends State<DynamicTable> {
       child: Column(
         children: [
           Container(
-            height: 72,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            height: kMinInteractiveDimension,
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             child: hasSelectedRows ? _SelectedRowsHeader(selectedRows: selectedRows, widget: widget) : _actionsHeader(),
           ),
           _header(),
@@ -296,7 +290,10 @@ class _DynamicTableState extends State<DynamicTable> {
                     flex: columnSize(col),
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: col.type == ColumnType.action ? col.childBuilder!(row) : _buildCell(row[col.id], col.type),
+                      child:
+                          col.type == ColumnType.action
+                              ? SizedBox(height: 28, child: col.childBuilder!(row))
+                              : _buildCell(row[col.id], col.type),
                     ),
                   );
                 }),
@@ -316,9 +313,9 @@ class _DynamicTableState extends State<DynamicTable> {
             children: [
               if (widget.leading != null) ...[
                 ...widget.leading!,
-                const SizedBox(width: 8),
-                VerticalDivider(indent: 12, endIndent: 12),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
+                VerticalDivider(indent: 4, endIndent: 4),
+                const SizedBox(width: 12),
               ],
               Expanded(
                 child: _SearchBarWidget(
@@ -331,10 +328,10 @@ class _DynamicTableState extends State<DynamicTable> {
                   },
                 ),
               ),
-              SizedBox(width: 8),
+              SizedBox(width: 12),
               if (widget.columns.any((row) => row.type == ColumnType.date)) ...[
-                VerticalDivider(indent: 12, endIndent: 12),
-                SizedBox(width: 8),
+                VerticalDivider(indent: 4, endIndent: 4),
+                SizedBox(width: 12),
                 DynamicTableDateFilter(
                   onSearch: (from, to) {
                     setState(() {
@@ -352,7 +349,7 @@ class _DynamicTableState extends State<DynamicTable> {
         Visibility(
           visible: widget.actions != null,
           child: Row(
-            children: [VerticalDivider(indent: 12, endIndent: 12), SizedBox(width: 8), ...widget.actions ?? []],
+            children: [VerticalDivider(indent: 4, endIndent: 4), SizedBox(width: 12), ...widget.actions ?? []],
           ),
         ),
       ],

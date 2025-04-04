@@ -115,9 +115,9 @@ class _DynamicTableDateFilterState extends State<DynamicTableDateFilter> {
                 decoration: InputDecoration(
                   labelText: 'Hasta',
                   hintText: 'Hasta',
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.clear, size: 16, color: Theme.of(context).colorScheme.tertiary),
-                    onPressed: () {
+                  suffixIcon: InkWell(
+                    child: Icon(Icons.clear, size: 16, color: Theme.of(context).colorScheme.tertiary),
+                    onTap: () {
                       toDate = null;
                       setState(() {});
                     },
@@ -143,7 +143,7 @@ class _DynamicTableDateFilterState extends State<DynamicTableDateFilter> {
           ),
           SizedBox(width: 8),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.secondary),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary),
             onPressed: () {
               widget.onSearch(fromDate, toDate);
             },

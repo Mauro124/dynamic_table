@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum ColumnType { text, number, currency, date, boolean, action }
+enum ColumnType { text, number, currency, date, boolean, action, dynamic }
 
 enum ColumnSize { small, medium, large }
 
@@ -38,4 +38,7 @@ class TableColumn {
 
   TableColumn.currency({required this.id, required this.label, this.size = ColumnSize.medium, this.childBuilder})
     : type = ColumnType.currency;
+
+  TableColumn.dynamic({required this.id, required this.label, this.size = ColumnSize.medium, this.childBuilder})
+    : type = ColumnType.dynamic;
 }

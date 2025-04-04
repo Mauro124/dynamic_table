@@ -91,6 +91,7 @@ class DynamicTable extends StatefulWidget {
   final DynamicTableStyle? style;
   final DynamicTableController? controller;
   final List<Widget>? leading;
+  final bool showCheckboxs;
 
   const DynamicTable({
     super.key,
@@ -103,7 +104,7 @@ class DynamicTable extends StatefulWidget {
     this.style,
     this.controller,
     this.leading,
-    s,
+    this.showCheckboxs = true,
   });
 
   @override
@@ -195,26 +196,30 @@ class _DynamicTableState extends State<DynamicTable> {
 
   Container _header() {
     return Container(
+      height: 36,
       color: widget.style?.headerColor ?? Colors.grey[200],
       padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
       child: Row(
         children: [
-          Checkbox(
-            value: selectedRows.value.length == widget.data.length,
-            onChanged: (value) {
-              setState(() {
-                if (value == true) {
-                  selectedRows.value =
-                      widget.data
-                          .asMap()
-                          .entries
-                          .map((e) => DynamicTableSelectedRow(index: e.key, data: e.value))
-                          .toList();
-                } else {
-                  selectedRows.value = [];
-                }
-              });
-            },
+          Visibility(
+            visible: widget.showCheckboxs,
+            child: Checkbox(
+              value: selectedRows.value.length == widget.data.length,
+              onChanged: (value) {
+                setState(() {
+                  if (value == true) {
+                    selectedRows.value =
+                        widget.data
+                            .asMap()
+                            .entries
+                            .map((e) => DynamicTableSelectedRow(index: e.key, data: e.value))
+                            .toList();
+                  } else {
+                    selectedRows.value = [];
+                  }
+                });
+              },
+            ),
           ),
           ...widget.columns.map((col) {
             return Expanded(
@@ -232,8 +237,10 @@ class _DynamicTableState extends State<DynamicTable> {
                 },
                 child: Row(
                   children: [
+                    if (sortedColumn == col.id) Icon(isAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 16),
+                    SizedBox(width: 4),
                     Text(
-                      col.label.toUpperCase(),
+                      col.label,
                       textAlign: TextAlign.start,
                       style: TextStyle(
                         fontSize: 12,
@@ -241,7 +248,6 @@ class _DynamicTableState extends State<DynamicTable> {
                         color: widget.style?.headerTextColor ?? Colors.black,
                       ),
                     ),
-                    if (sortedColumn == col.id) Icon(isAscending ? Icons.arrow_upward : Icons.arrow_downward),
                   ],
                 ),
               ),
@@ -270,20 +276,24 @@ class _DynamicTableState extends State<DynamicTable> {
             ),
             child: Row(
               children: [
-                Checkbox(
-                  value: selectedRows.value.any((element) => element.index == rowIndex),
-                  onChanged: (value) {
-                    setState(() {
-                      if (value == true) {
-                        selectedRows.value = [
-                          ...selectedRows.value,
-                          DynamicTableSelectedRow(index: rowIndex, data: row),
-                        ];
-                      } else {
-                        selectedRows.value = selectedRows.value.where((element) => element.index != rowIndex).toList();
-                      }
-                    });
-                  },
+                Visibility(
+                  visible: widget.showCheckboxs,
+                  child: Checkbox(
+                    value: selectedRows.value.any((element) => element.index == rowIndex),
+                    onChanged: (value) {
+                      setState(() {
+                        if (value == true) {
+                          selectedRows.value = [
+                            ...selectedRows.value,
+                            DynamicTableSelectedRow(index: rowIndex, data: row),
+                          ];
+                        } else {
+                          selectedRows.value =
+                              selectedRows.value.where((element) => element.index != rowIndex).toList();
+                        }
+                      });
+                    },
+                  ),
                 ),
                 ...widget.columns.map((col) {
                   return Expanded(
@@ -291,9 +301,15 @@ class _DynamicTableState extends State<DynamicTable> {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child:
-                          col.type == ColumnType.action
+                          col.type == ColumnType.action || col.type == ColumnType.dynamic || col.childBuilder != null
                               ? SizedBox(height: 28, child: col.childBuilder!(row))
-                              : _buildCell(row[col.id], col.type),
+                              : Material(
+                                textStyle: TextStyle(color: widget.style?.textColor ?? Colors.black, fontSize: 14),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 4),
+                                  child: _buildCell(row[col.id], col.type),
+                                ),
+                              ),
                     ),
                   );
                 }),
@@ -431,7 +447,7 @@ class _SelectedRowsHeader extends StatelessWidget {
       children: [
         Text('${selectedRows.value.length} seleccionados'),
         SizedBox(width: 8),
-        VerticalDivider(indent: 12, endIndent: 12),
+        VerticalDivider(indent: 4, endIndent: 4),
         SizedBox(width: 8),
         ...widget.selectedActions ?? [],
       ],

@@ -225,6 +225,10 @@ class _DynamicTableState extends State<DynamicTable> {
             return Expanded(
               flex: columnSize(col),
               child: InkWell(
+                mouseCursor:
+                    col.type != ColumnType.action && col.type != ColumnType.dynamic && col.childBuilder == null
+                        ? SystemMouseCursors.click
+                        : MouseCursor.defer,
                 onTap: () {
                   setState(() {
                     if (sortedColumn == col.id) {
@@ -237,11 +241,16 @@ class _DynamicTableState extends State<DynamicTable> {
                 },
                 child: Row(
                   children: [
-                    if (sortedColumn == col.id) Icon(isAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 16),
+                    if (sortedColumn == col.id &&
+                        col.type != ColumnType.action &&
+                        col.type != ColumnType.dynamic &&
+                        col.childBuilder == null)
+                      Icon(isAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 16, color: Colors.black),
                     SizedBox(width: 4),
                     Text(
                       col.label,
                       textAlign: TextAlign.start,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -270,6 +279,7 @@ class _DynamicTableState extends State<DynamicTable> {
           final rowIndex = startRow + index;
           final row = sortedData[rowIndex];
           return Container(
+            height: 36,
             padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: widget.style?.dividersColors ?? Colors.grey)),
@@ -328,6 +338,7 @@ class _DynamicTableState extends State<DynamicTable> {
           child: Row(
             children: [
               if (widget.leading != null) ...[
+                const SizedBox(width: 4),
                 ...widget.leading!,
                 const SizedBox(width: 12),
                 VerticalDivider(indent: 4, endIndent: 4),
@@ -345,20 +356,20 @@ class _DynamicTableState extends State<DynamicTable> {
                 ),
               ),
               SizedBox(width: 12),
-              if (widget.columns.any((row) => row.type == ColumnType.date)) ...[
-                VerticalDivider(indent: 4, endIndent: 4),
-                SizedBox(width: 12),
-                DynamicTableDateFilter(
-                  onSearch: (from, to) {
-                    setState(() {
-                      dateFrom = from;
-                      dateTo = to;
-                      currentPage = 0;
-                    });
-                  },
-                ),
-                SizedBox(width: 8),
-              ],
+              // if (widget.columns.any((row) => row.type == ColumnType.date)) ...[
+              //   VerticalDivider(indent: 4, endIndent: 4),
+              //   SizedBox(width: 12),
+              //   DynamicTableDateFilter(
+              //     onSearch: (from, to) {
+              //       setState(() {
+              //         dateFrom = from;
+              //         dateTo = to;
+              //         currentPage = 0;
+              //       });
+              //     },
+              //   ),
+              //   SizedBox(width: 8),
+              // ],
             ],
           ),
         ),
@@ -375,28 +386,18 @@ class _DynamicTableState extends State<DynamicTable> {
   List<Map<String, dynamic>> _filterData() {
     return widget.data.where((row) {
       bool matchesSearchQuery = row.values.any(
-        (value) => value.toString().toLowerCase().contains(searchQuery.toLowerCase()),
+        (value) => value.toString().trim().toLowerCase().contains(searchQuery.toLowerCase()),
       );
-      bool matchesDateRange = true;
+      // bool matchesDateRange = true;
 
-      if (dateFrom != null) {
-        matchesDateRange = row.values.any((value) {
-          final dateParsed = DateTime.tryParse(value.toString());
-          if (dateParsed == null) return false;
-          final isDateFrom =
-              dateParsed.day == dateFrom!.day &&
-              dateParsed.month == dateFrom!.month &&
-              dateParsed.year == dateFrom!.year;
-          final isDateTo =
-              dateTo != null &&
-              dateParsed.day == dateTo!.day &&
-              dateParsed.month == dateTo!.month &&
-              dateParsed.year == dateTo!.year;
-          return isDateFrom || isDateTo;
-        });
-      }
+      // if (dateFrom != null) {
+      //   matchesDateRange = row.values.any((value) {
+      //     final dateParsed = DateTime.tryParse(value.toString());
+      //     return dateParsed != null && dateParsed.isAfter(dateFrom!);
+      //   });
+      // }
 
-      return matchesSearchQuery && matchesDateRange;
+      return matchesSearchQuery;
     }).toList();
   }
 

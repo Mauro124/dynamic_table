@@ -257,6 +257,7 @@ class _DynamicTableState extends State<DynamicTable> {
                         color: widget.style?.headerTextColor ?? Colors.black,
                       ),
                     ),
+                    SizedBox(width: 4),
                   ],
                 ),
               ),
@@ -308,18 +309,21 @@ class _DynamicTableState extends State<DynamicTable> {
                 ...widget.columns.map((col) {
                   return Expanded(
                     flex: columnSize(col),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child:
-                          col.type == ColumnType.action || col.type == ColumnType.dynamic || col.childBuilder != null
-                              ? SizedBox(height: 28, child: col.childBuilder!(row))
-                              : Material(
-                                textStyle: TextStyle(color: widget.style?.textColor ?? Colors.black, fontSize: 14),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(left: 4),
-                                  child: _buildCell(row[col.id], col.type),
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child:
+                            col.type == ColumnType.action || col.type == ColumnType.dynamic || col.childBuilder != null
+                                ? SizedBox(height: 28, child: col.childBuilder!(row))
+                                : Material(
+                                  textStyle: TextStyle(color: widget.style?.textColor ?? Colors.black, fontSize: 14),
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(left: 2),
+                                    child: _buildCell(row[col.id], col.type),
+                                  ),
                                 ),
-                              ),
+                      ),
                     ),
                   );
                 }),

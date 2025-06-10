@@ -1,4 +1,3 @@
-import 'package:dynamic_table/table/dynamic_table_date_filter.dart';
 import 'package:dynamic_table/table/table_column.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -222,7 +221,7 @@ class _DynamicTableState extends State<DynamicTable> {
             ),
           ),
           ...widget.columns.map((col) {
-            return Expanded(
+            return Flexible(
               flex: columnSize(col),
               child: InkWell(
                 mouseCursor:
@@ -247,14 +246,16 @@ class _DynamicTableState extends State<DynamicTable> {
                         col.childBuilder == null)
                       Icon(isAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 16, color: Colors.black),
                     SizedBox(width: 4),
-                    Text(
-                      col.label,
-                      textAlign: TextAlign.start,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: widget.style?.headerTextColor ?? Colors.black,
+                    Expanded(
+                      child: Text(
+                        col.label,
+                        textAlign: TextAlign.start,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: widget.style?.headerTextColor ?? Colors.black,
+                        ),
                       ),
                     ),
                     SizedBox(width: 4),
@@ -317,7 +318,11 @@ class _DynamicTableState extends State<DynamicTable> {
                             col.type == ColumnType.action || col.type == ColumnType.dynamic || col.childBuilder != null
                                 ? SizedBox(height: 28, child: col.childBuilder!(row))
                                 : Material(
-                                  textStyle: TextStyle(color: widget.style?.textColor ?? Colors.black, fontSize: 14),
+                                  textStyle: TextStyle(
+                                    color: widget.style?.textColor ?? Colors.black,
+                                    fontSize: 14,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                   child: Padding(
                                     padding: const EdgeInsets.only(left: 2),
                                     child: _buildCell(row[col.id], col.type),
@@ -424,6 +429,7 @@ class _DynamicTableState extends State<DynamicTable> {
         return Text(
           DateFormat('dd/MM/yyyy').format(value is DateTime ? value : DateTime.parse(value.toString())),
           textAlign: TextAlign.start,
+          overflow: TextOverflow.ellipsis,
         );
       case ColumnType.boolean:
         return Icon(
@@ -431,11 +437,15 @@ class _DynamicTableState extends State<DynamicTable> {
           color: value == true ? Colors.green : Colors.red,
         );
       case ColumnType.number:
-        return Text(value.toString());
+        return Text(value.toString(), textAlign: TextAlign.start, overflow: TextOverflow.ellipsis);
       case ColumnType.currency:
-        return Text("\$ ${NumberFormat.currency(locale: 'es_AR', symbol: '').format(value)}");
+        return Text(
+          "\$ ${NumberFormat.currency(locale: 'es_AR', symbol: '').format(value)}",
+          textAlign: TextAlign.start,
+          overflow: TextOverflow.ellipsis,
+        );
       default:
-        return Text(value.toString());
+        return Text(value.toString(), textAlign: TextAlign.start, overflow: TextOverflow.ellipsis);
     }
   }
 }
